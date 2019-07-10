@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:async';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
-import 'package:email_validator/email_validator.dart';
 
 void main() => runApp(new MyApp());
 
@@ -20,27 +20,37 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formResetEmailKey = GlobalKey<FormState>();
   final _scafoldState = GlobalKey<ScaffoldState>();
+  int counter = 0;
+  bool _validate = false;
+  String email, password;
 
-  String email;
-  String password;
-
-  TextEditingController _text = TextEditingController();
-
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-
-  bool isEmpty = false;
-  String _errorMessage = "";
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      key: _scafoldState,
-      body: new Container(
-          child: Form(
-            key: _formKey,
-                      child: ListView(
-        children: <Widget>[
+    
+    
+    return WillPopScope(
+      onWillPop: (){
+        if(counter == 1){
+          print("EXIT");
+        
+        }
+         Fluttertoast.showToast(
+        msg: "Press again for exit!",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM, 
+        );
+        counter++;
+       Timer(Duration(seconds : 2),(){
+            counter = 0;
+          });
+      },
+          child: new Scaffold(
+        key: _scafoldState,
+        body: new Container(
+            child: ListView(
+          children: <Widget>[
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: new Column(
@@ -65,38 +75,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   // Email edit text field
                   Padding(
-                      padding:
-                          EdgeInsets.only(left: 1, top: 10, right: 1, bottom: 1),
-                      child: new TextFormField(
-                        controller: _emailController,
-                        style: new TextStyle(),
-                        decoration: InputDecoration(
-                          
-                            labelText: "Email",
-                            contentPadding: EdgeInsets.only(left: 8.0),
-                            ),
-                        validator: (val) => !EmailValidator.Validate(val, true)
-                        ? 'Not a valid email.'
-                        : "",
-                        onSaved: (val) => email = _emailController.text,
-                        keyboardType: TextInputType.emailAddress,
-                      )),
-                  // password edit text field
-                  Padding(
                     padding:
                         EdgeInsets.only(left: 1, top: 10, right: 1, bottom: 1),
-                    child: new TextFormField(
-                      controller: _passwordController,
-                      style: new TextStyle(),
-                      decoration: InputDecoration(
-                          labelText: "Password",
-                          contentPadding: EdgeInsets.only(left: 8)),
-                          validator: (val) =>
-                      val.length < 4 ? 'Password too short..' : "",
-                  onSaved: (val) => password = _passwordController.text,
-                      keyboardType: TextInputType.text,
-                      obscureText: true,
+                    child: new Form(
+                      key: _formKey,
+                      child: _formData(),
                     ),
+                    // password edit text field
                   ),
                   // forgot password text field
                   Container(
@@ -106,8 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: InkWell(
                       onTap: () {
-                        _text.text = "";
-                        _errorMessage = "";
                         _showAlertDialog();
                       },
                       child: new Text(
@@ -129,9 +112,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: EdgeInsets.only(top: 20),
                     width: double.infinity,
                     height: 65,
-                    child: RaisedButton(
-
-                      onPressed: (){
+                    child: MaterialButton(
+                     shape: RoundedRectangleBorder(borderRadius: new BorderRadius.circular(20)),
+                      onPressed: () {
                         _onLoginButtonClicked();
                       },
                       child: new Center(
@@ -141,13 +124,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
-                            
                           ),
                           textAlign: TextAlign.center,
                         ),
                       ),
-                     // borderRadius: BorderRadius.circular(20),
-                     // shadowColor: Colors.greenAccent,
+                      // borderRadius: BorderRadius.circular(20),
+                      // shadowColor: Colors.greenAccent,
                       elevation: 5,
                       color: Colors.green,
                       // child: GestureDetector(
@@ -190,13 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               AssetImage('assets/facebook.png'),
                             ),
                           ),
-                          // new Center(
-                          //   child: new Text(
-                          //     "Login with Facebook",
-                          //     style: TextStyle(fontWeight: FontWeight.bold),
-                          //   ),
-                          // ),
-                          new GestureDetector(
+                         new GestureDetector(
                             onTap: () {
                               print("fds");
                             },
@@ -236,23 +212,68 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ),
-        ],
+          ],
+        )),
       ),
-          )),
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
+  Widget _formData() {
+    return new Column(
+      children: <Widget>[
+        new TextFormField(
+          decoration: new InputDecoration(hintText: 'Enter Email'),
+          //maxLength: 32,
+          validator: validateEmail,
+          onSaved: (String val) {
+            email = val;
+          },
+        ),
+        new TextFormField(
+            decoration: new InputDecoration(hintText: 'Enter Password'),
+            keyboardType: TextInputType.phone,
+            // maxLength: 30,
+            validator: validatePassword,
+            onSaved: (String val) {
+              password = val;
+            }),
+      ],
+    );
   }
-// for Reset Passsword 
+
+  String validateEmail(String value) {
+    String pattern =
+        r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
+    RegExp regExp = new RegExp(pattern);
+    if (value.length == 0) {
+      return "Email is Required";
+    } else if (!regExp.hasMatch(value)) {
+      return "Invalid Email";
+    } else {
+      return null;
+    }
+  }
+
+  String validatePassword(String value) {
+    //String patttern = r'(^[0-9]*$)';
+    // RegExp regExp = new RegExp(patttern);
+    if (value.length == 0) {
+      return "Password is Required";
+    } else if (value.length <= 5) {
+      return "Password length must 6 character";
+    }
+    //else if (!regExp.hasMatch(value)) {
+    //   return "Mobile Number must be digits";
+    // }
+    return null;
+  }
+
+// for Reset Passsword
   void _showAlertDialog() {
     showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            
             title: new Text(
               "Forgot Password",
               textAlign: TextAlign.center,
@@ -267,22 +288,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   height: 10,
                 ),
-                TextField(
-                  
-                  autofocus: false,
-                  controller: _text,
-                  decoration: InputDecoration(
-                      contentPadding: EdgeInsets.only(left: 5, bottom: 2),
-                      labelText: "Email"),
-                ),
-                SizedBox(
-                  height: 4,
-                ),
-                Text(
-                  _errorMessage,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.red,
+                Form(
+                  key: _formResetEmailKey,
+                  child: new TextFormField(
+                    decoration: new InputDecoration(hintText: 'Enter Email'),
+                    //maxLength: 32,
+                    validator: validateResetEmail,
+                    onSaved: (String val) {
+                      email = val;
+                    },
                   ),
                 ),
               ],
@@ -297,14 +311,8 @@ class _LoginScreenState extends State<LoginScreen> {
               FlatButton(
                 child: new Text("Send"),
                 onPressed: () {
-                  FocusScope.of(context).requestFocus(new FocusNode());// to dismiss the keyboard
-                  setState(() {
-                    _text.text.isEmpty
-                        ? _errorMessage = "Email can't be empty."
-                        : _validateFields(_text.text, "2");
-
-                    print("Tesxc {isEmpty}");
-                  });
+                  // FocusScope.of(context).requestFocus(new FocusNode()); // to dismiss the keyboard
+                  _onResetEmailButtonClicked();
                   //Navigator.of(context).pop();
                 },
               )
@@ -313,48 +321,53 @@ class _LoginScreenState extends State<LoginScreen> {
         });
   }
 
-  @override
-  void dispose() {
-    _text.dispose();
-    super.dispose();
+  String validateResetEmail(String value) {
+    String pattern =
+        r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
+    RegExp regExp = new RegExp(pattern);
+    if (value.length == 0) {
+      return "Email is Required";
+    } else if (!regExp.hasMatch(value)) {
+      return "Invalid Email";
+    } else {
+      return null;
+    }
   }
 
-  _validateFields(String email, String type) {
-    //String email = _text.text;
+  void _onResetEmailButtonClicked() {
+    if (_formResetEmailKey.currentState.validate()) {
+      // No any error in validation
+      _formResetEmailKey.currentState.save();
+      print("Email $email");
 
-    // 1 for email & passoword field
-    // 2 forgot password =email
-
-    bool emailValid =
-        RegExp(r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email);
-
-    if (emailValid) {
-      if (type == "1") {
-        print("Great job");
-      } else {
-        Navigator.of(context).pop();
-      }
+      _loginSuccessfull();
     } else {
+      // validation error
       setState(() {
-        _text.text.isEmpty ? isEmpty = true : new Text("fsdfsd");
+        _validate = true;
       });
     }
   }
 
   void _onLoginButtonClicked() {
-    final form = _formKey.currentState;
-FocusScope.of(context).requestFocus(new FocusNode());// to dismiss the keyboard
-
-    if (form.validate()) {
-      print("$form.validate() \n $email \t $password");
-      form.save();
+    if (_formKey.currentState.validate()) {
+      // No any error in validation
+      _formKey.currentState.save();
+      print("Email $email");
+      print("Password $password");
       _loginSuccessfull();
+    } else {
+      // validation error
+      setState(() {
+        _validate = true;
+      });
     }
   }
 
   void _loginSuccessfull() {
-      print("Form Valid \n $email \t $password");
-    final SnackBar snackBar = new SnackBar(content: new Text(" $email \t $password"),);
+    final SnackBar snackBar = new SnackBar(
+      content: new Text(" $email \t $password"),
+    );
     _scafoldState.currentState.showSnackBar(snackBar);
   }
 }
